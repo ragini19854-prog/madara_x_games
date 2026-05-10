@@ -39,6 +39,9 @@ user_titles = {}
 user_boards = {}
 user_shields = {}
 banned_users = set()
+user_friends = {}       # uid → set of friend uids
+friend_requests = {}    # uid → set of sender uids (pending incoming)
+user_names = {}         # uid → first_name (cached)
 
 # ================= FONT CONVERTER =================
 
@@ -507,6 +510,7 @@ def build_main_menu_markup():
             InlineKeyboardButton(ff("📊 Stats"), callback_data="ttt_stats", style=enums.ButtonStyle.PRIMARY),
         ],
         [InlineKeyboardButton(ff("🎁 Daily"), callback_data="ttt_daily", style=enums.ButtonStyle.SUCCESS)],
+        [InlineKeyboardButton(ff("👥 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)],
         [
             InlineKeyboardButton("му мαѕтєя", url="https://t.me/YOUR_fucker_dad", style=enums.ButtonStyle.DANGER),
             InlineKeyboardButton("ѕυρρσят", url="https://t.me/+Li5WLVyQTwNkOTQ1", style=enums.ButtonStyle.DANGER),
@@ -545,6 +549,7 @@ async def start(client, message):
     await loading_1.delete()
 
     uid = message.from_user.id
+    user_names[uid] = message.from_user.first_name
     c = user_coins.get(uid, 0)
     w = user_wins.get(uid, 0)
     name = message.from_user.first_name
@@ -924,6 +929,195 @@ async def owner_help(client, message):
         "└────────────────────────┘",
         parse_mode=enums.ParseMode.MARKDOWN
     )
+
+
+# ================= SOCIAL COMMANDS =================
+
+@app.on_message(filters.command("addfriend"))
+async def addfriend_cmd(client, message):
+    if is_banned(message.from_user.id):
+        await message.reply_text("🚫 You are banned.")
+        return
+    uid = message.from_user.id
+    user_names[uid] = message.from_user.first_name
+    if len(message.command) < 2:
+        await message.reply_text(
+            "╔══════════════════════╗\n"
+            "       👥 *ADD FRIEND*\n"
+            "╚══════════════════════╝\n\n"
+            "Usage: `/addfriend <user_id>`\n\n"
+            "💡 Share your ID: `" + str(uid) + "`" + foot,
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+    try:
+        target_id = int(message.command[1])
+    except ValueError:
+        await message.reply_text("❌ Invalid user ID.", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    if target_id == uid:
+        await message.reply_text("😂 You can't add yourself!", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    if uid in (user_friends.get(target_id) or set()):
+        await message.reply_text("✅ Already friends!", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    if uid in (friend_requests.get(target_id) or set()):
+        await message.reply_text("⏳ Request already sent!", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    # Check if target already sent us a request → auto-accept
+    if target_id in (friend_requests.get(uid) or set()):
+        friend_requests[uid].discard(target_id)
+        user_friends.setdefault(uid, set()).add(target_id)
+        user_friends.setdefault(target_id, set()).add(uid)
+        await message.reply_text(
+            "╔══════════════════════╗\n"
+            "       🎉 *FRIENDS!*\n"
+            "╚══════════════════════╝\n\n"
+            f"✅ You and `{target_id}` are now friends!" + foot,
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        try:
+            await client.send_message(
+                target_id,
+                f"🎉 *{cN(message.from_user.first_name)}* accepted your friend request!\n"
+                f"👥 You are now friends!" + foot,
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+        except Exception:
+            pass
+        return
+    friend_requests.setdefault(target_id, set()).add(uid)
+    await message.reply_text(
+        "╔══════════════════════╗\n"
+        "       📨 *REQUEST SENT*\n"
+        "╚══════════════════════╝\n\n"
+        f"✅ Friend request sent to `{target_id}`!\n"
+        "⏳ Waiting for them to accept." + foot,
+        parse_mode=enums.ParseMode.MARKDOWN
+    )
+    try:
+        await client.send_message(
+            target_id,
+            "╔══════════════════════╗\n"
+            "       📨 *FRIEND REQUEST*\n"
+            "╚══════════════════════╝\n\n"
+            f"👤 *{cN(message.from_user.first_name)}* (`{uid}`) wants to be your friend!" + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(ff("✅ Accept"), callback_data=f"fr_acc {uid}", style=enums.ButtonStyle.SUCCESS),
+                    InlineKeyboardButton(ff("❌ Decline"), callback_data=f"fr_dec {uid}", style=enums.ButtonStyle.DANGER),
+                ]
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+    except Exception:
+        pass
+
+
+@app.on_message(filters.command("removefriend"))
+async def removefriend_cmd(client, message):
+    if is_banned(message.from_user.id):
+        await message.reply_text("🚫 You are banned.")
+        return
+    uid = message.from_user.id
+    if len(message.command) < 2:
+        await message.reply_text("Usage: `/removefriend <user_id>`", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    try:
+        target_id = int(message.command[1])
+    except ValueError:
+        await message.reply_text("❌ Invalid user ID.")
+        return
+    user_friends.setdefault(uid, set()).discard(target_id)
+    user_friends.setdefault(target_id, set()).discard(uid)
+    await message.reply_text(f"✅ Removed `{target_id}` from friends.", parse_mode=enums.ParseMode.MARKDOWN)
+
+
+@app.on_message(filters.command("gift"))
+async def gift_cmd(client, message):
+    if is_banned(message.from_user.id):
+        await message.reply_text("🚫 You are banned.")
+        return
+    uid = message.from_user.id
+    if len(message.command) < 3:
+        await message.reply_text(
+            "Usage: `/gift <user_id> <amount>`\n💡 Gift coins to your friends!",
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+    try:
+        target_id = int(message.command[1])
+        amount = int(message.command[2])
+    except ValueError:
+        await message.reply_text("❌ Invalid user ID or amount.")
+        return
+    if target_id == uid:
+        await message.reply_text("😂 Gift to yourself? No!", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    if amount <= 0:
+        await message.reply_text("❌ Amount must be positive.", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+    my_coins = user_coins.get(uid, 0)
+    if my_coins < amount:
+        await message.reply_text(
+            f"❌ You only have *{my_coins}* coins!", parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+    user_coins[uid] = my_coins - amount
+    user_coins[target_id] = user_coins.get(target_id, 0) + amount
+    await message.reply_text(
+        "╔══════════════════════╗\n"
+        "       🎁 *GIFT SENT!*\n"
+        "╚══════════════════════╝\n\n"
+        f"💸 Sent *{amount}* coins to `{target_id}`\n"
+        f"💰 Your balance: *{user_coins[uid]}*" + foot,
+        parse_mode=enums.ParseMode.MARKDOWN
+    )
+    try:
+        await client.send_message(
+            target_id,
+            "╔══════════════════════╗\n"
+            "       🎁 *GIFT RECEIVED!*\n"
+            "╚══════════════════════╝\n\n"
+            f"🎉 *{cN(message.from_user.first_name)}* gifted you *{amount}* coins!\n"
+            f"💰 Your balance: *{user_coins[target_id]}*" + foot,
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+    except Exception:
+        pass
+
+
+@app.on_message(filters.command("friends"))
+async def friends_cmd(client, message):
+    if is_banned(message.from_user.id):
+        await message.reply_text("🚫 You are banned.")
+        return
+    uid = message.from_user.id
+    fl = list(user_friends.get(uid, set()))
+    pending = list(friend_requests.get(uid, set()))
+    if not fl and not pending:
+        await message.reply_text(
+            "╔══════════════════════╗\n"
+            "       👥 *FRIENDS*\n"
+            "╚══════════════════════╝\n\n"
+            "😔 You have no friends yet!\n\n"
+            "💡 Use `/addfriend <user_id>` to add someone.\n"
+            f"📋 Your ID: `{uid}`" + foot,
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+    txt = "╔══════════════════════╗\n       👥 *FRIENDS*\n╚══════════════════════╝\n\n"
+    if fl:
+        txt += "┌──── 👫 ʟɪsт ────┐\n"
+        for i, fid in enumerate(fl[:10], 1):
+            fname = user_names.get(fid, str(fid))
+            w = user_wins.get(fid, 0)
+            txt += f"│ {i}. {cN(fname)} — 🏆{w}W\n"
+        txt += "└────────────────────┘\n\n"
+    if pending:
+        txt += f"📨 *{len(pending)} pending request(s)*\n"
+    txt += f"\n📋 Your ID: `{uid}`" + foot
+    await message.reply_text(txt, parse_mode=enums.ParseMode.MARKDOWN)
 
 
 # ================= CALLBACK QUERY HANDLER =================
@@ -1819,6 +2013,276 @@ async def callback_handler(client, callback_query):
         games[gid] = g
         await render_board(client, gid)
         await callback_query.answer()
+        return
+
+    # ═══ SOCIAL HUB ═══
+    if data == "soc_hub":
+        uid = user_id
+        fl = user_friends.get(uid, set())
+        pending = friend_requests.get(uid, set())
+        coins = user_coins.get(uid, 0)
+        await callback_query.message.edit_text(
+            "╔══════════════════════╗\n"
+            "       👥 *SOCIAL HUB*\n"
+            "╚══════════════════════╝\n\n"
+            f"┌──── 📋 ʏᴏᴜʀ ɪᴅ ────┐\n"
+            f"│  `{uid}`\n"
+            "└────────────────────┘\n\n"
+            f"👫 *Friends:* {len(fl)}\n"
+            f"📨 *Pending requests:* {len(pending)}\n"
+            f"💰 *Coins:* {coins}" + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(ff("👫 Friends"), callback_data="soc_friends", style=enums.ButtonStyle.PRIMARY),
+                    InlineKeyboardButton(ff("📨 Requests"), callback_data="soc_requests", style=enums.ButtonStyle.PRIMARY),
+                ],
+                [
+                    InlineKeyboardButton(ff("➕ Add Friend"), callback_data="soc_addinfo", style=enums.ButtonStyle.SUCCESS),
+                    InlineKeyboardButton(ff("🎁 Gift Coins"), callback_data="soc_giftinfo", style=enums.ButtonStyle.SUCCESS),
+                ],
+                [InlineKeyboardButton(ff("🔙 Menu"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+
+    if data == "soc_friends":
+        uid = user_id
+        fl = list(user_friends.get(uid, set()))
+        if not fl:
+            await callback_query.message.edit_text(
+                "╔══════════════════════╗\n"
+                "       👫 *FRIENDS*\n"
+                "╚══════════════════════╝\n\n"
+                "😔 *No friends yet!*\n\n"
+                "Use `/addfriend <user_id>` to add someone.\n"
+                f"📋 Your ID: `{uid}`" + foot,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)]
+                ]),
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+            return
+        txt = (
+            "╔══════════════════════╗\n"
+            "       👫 *FRIENDS LIST*\n"
+            "╚══════════════════════╝\n\n"
+            "┌────────────────────────┐\n"
+        )
+        rows = []
+        for fid in fl[:8]:
+            fname = user_names.get(fid, str(fid))
+            w = user_wins.get(fid, 0)
+            l = user_lose.get(fid, 0)
+            rank = getRank(w)
+            txt += f"│ {rank['icon']} *{cN(fname)}*  🏆{w}W ❌{l}L\n"
+            rows.append([
+                InlineKeyboardButton(f"⚔️ {cN(fname)[:10]}", callback_data=f"soc_ch {fid}", style=enums.ButtonStyle.PRIMARY),
+                InlineKeyboardButton(f"🎁", callback_data=f"soc_g {fid}", style=enums.ButtonStyle.SUCCESS),
+                InlineKeyboardButton(f"❌", callback_data=f"soc_rm {fid}", style=enums.ButtonStyle.DANGER),
+            ])
+        txt += "└────────────────────────┘" + foot
+        rows.append([InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)])
+        await callback_query.message.edit_text(txt, reply_markup=InlineKeyboardMarkup(rows), parse_mode=enums.ParseMode.MARKDOWN)
+        return
+
+    if data == "soc_requests":
+        uid = user_id
+        pending = list(friend_requests.get(uid, set()))
+        if not pending:
+            await callback_query.message.edit_text(
+                "╔══════════════════════╗\n"
+                "       📨 *REQUESTS*\n"
+                "╚══════════════════════╝\n\n"
+                "✅ *No pending requests!*" + foot,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)]
+                ]),
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+            return
+        txt = (
+            "╔══════════════════════╗\n"
+            "       📨 *FRIEND REQUESTS*\n"
+            "╚══════════════════════╝\n\n"
+            "┌────────────────────────┐\n"
+        )
+        rows = []
+        for sid in pending[:8]:
+            sname = user_names.get(sid, str(sid))
+            w = user_wins.get(sid, 0)
+            txt += f"│ 👤 *{cN(sname)}*  🏆{w}W\n"
+            rows.append([
+                InlineKeyboardButton(f"✅ Accept {cN(sname)[:8]}", callback_data=f"fr_acc {sid}", style=enums.ButtonStyle.SUCCESS),
+                InlineKeyboardButton(f"❌ Decline", callback_data=f"fr_dec {sid}", style=enums.ButtonStyle.DANGER),
+            ])
+        txt += "└────────────────────────┘" + foot
+        rows.append([InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)])
+        await callback_query.message.edit_text(txt, reply_markup=InlineKeyboardMarkup(rows), parse_mode=enums.ParseMode.MARKDOWN)
+        return
+
+    if data == "soc_addinfo":
+        await callback_query.message.edit_text(
+            "╔══════════════════════╗\n"
+            "       ➕ *ADD FRIEND*\n"
+            "╚══════════════════════╝\n\n"
+            "Send this command in the chat:\n\n"
+            f"`/addfriend <user_id>`\n\n"
+            f"📋 *Your ID:* `{user_id}`\n\n"
+            "💡 Share your ID with friends so they can add you!" + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)]
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+
+    if data == "soc_giftinfo":
+        c = user_coins.get(user_id, 0)
+        await callback_query.message.edit_text(
+            "╔══════════════════════╗\n"
+            "       🎁 *GIFT COINS*\n"
+            "╚══════════════════════╝\n\n"
+            "Send this command in the chat:\n\n"
+            "`/gift <user_id> <amount>`\n\n"
+            f"💰 *Your balance:* {c} coins\n\n"
+            "💡 You can only gift coins you own!" + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)]
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+
+    # Friend gift shortcut from friends list
+    if data.startswith("soc_g "):
+        fid = int(data.split(" ")[1])
+        fname = user_names.get(fid, str(fid))
+        c = user_coins.get(user_id, 0)
+        await callback_query.answer(
+            f"Use /gift {fid} <amount>\nYour balance: {c} coins",
+            show_alert=True
+        )
+        return
+
+    # Remove friend from friends list
+    if data.startswith("soc_rm "):
+        fid = int(data.split(" ")[1])
+        fname = user_names.get(fid, str(fid))
+        user_friends.setdefault(user_id, set()).discard(fid)
+        user_friends.setdefault(fid, set()).discard(user_id)
+        await callback_query.answer(f"✅ Removed {cN(fname)} from friends.", show_alert=True)
+        # Refresh friends list
+        fl = list(user_friends.get(user_id, set()))
+        if not fl:
+            await callback_query.message.edit_text(
+                "╔══════════════════════╗\n"
+                "       👫 *FRIENDS*\n"
+                "╚══════════════════════╝\n\n"
+                "😔 *No friends left!*" + foot,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)]
+                ]),
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+        return
+
+    # Challenge friend directly from friends list
+    if data.startswith("soc_ch "):
+        fid = int(data.split(" ")[1])
+        fname = user_names.get(fid, str(fid))
+        gid = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        games[gid] = {
+            "id": gid,
+            "p1": user_id, "p1_name": callback_query.from_user.first_name,
+            "p1_msg": None,
+            "p2": None, "p2_name": cN(fname),
+            "target_uid": fid,
+            "board": [" "] * 9,
+            "turn": user_id,
+            "status": "waiting_friend",
+            "type": "multi",
+            "wager": 0,
+        }
+        me = await client.get_me()
+        link = f"https://t.me/{me.username}?start=ttt_{gid}"
+        await callback_query.message.edit_text(
+            "╔══════════════════════╗\n"
+            "       ⚔️ *CHALLENGE!*\n"
+            "╚══════════════════════╝\n\n"
+            f"📨 Invite sent to *{cN(fname)}*!\n\n"
+            f"🔗 Link: `{link}`" + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ff("❌ Cancel"), callback_data=f"ttt_cancel {gid}", style=enums.ButtonStyle.DANGER)],
+                [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)],
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        games[gid]["p1_msg"] = callback_query.message.id
+        try:
+            await client.send_message(
+                fid,
+                "╔══════════════════════╗\n"
+                "       ⚔️ *FRIEND CHALLENGE!*\n"
+                "╚══════════════════════╝\n\n"
+                f"👤 *{cN(callback_query.from_user.first_name)}* challenges you!\n\n"
+                f"🔗 [Click to play]({link})" + foot,
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+        except Exception:
+            pass
+        return
+
+    # Accept friend request
+    if data.startswith("fr_acc "):
+        sender_id = int(data.split(" ")[1])
+        uid = user_id
+        friend_requests.setdefault(uid, set()).discard(sender_id)
+        user_friends.setdefault(uid, set()).add(sender_id)
+        user_friends.setdefault(sender_id, set()).add(uid)
+        user_names.setdefault(uid, callback_query.from_user.first_name)
+        sname = user_names.get(sender_id, str(sender_id))
+        await callback_query.message.edit_text(
+            "╔══════════════════════╗\n"
+            "       🎉 *FRIENDS!*\n"
+            "╚══════════════════════╝\n\n"
+            f"✅ You and *{cN(sname)}* are now friends!\n\n"
+            "👫 Challenge them from Social Hub!" + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ff("👥 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)],
+                [InlineKeyboardButton(ff("🔙 Menu"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        try:
+            await client.send_message(
+                sender_id,
+                f"🎉 *{cN(callback_query.from_user.first_name)}* accepted your friend request!\n"
+                "👫 You are now friends!" + foot,
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+        except Exception:
+            pass
+        await callback_query.answer("🎉 Friend added!")
+        return
+
+    # Decline friend request
+    if data.startswith("fr_dec "):
+        sender_id = int(data.split(" ")[1])
+        uid = user_id
+        friend_requests.setdefault(uid, set()).discard(sender_id)
+        sname = user_names.get(sender_id, str(sender_id))
+        await callback_query.message.edit_text(
+            "╔══════════════════════╗\n"
+            "       ❌ *DECLINED*\n"
+            "╚══════════════════════╝\n\n"
+            f"Request from *{cN(sname)}* declined." + foot,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(ff("🔙 Social Hub"), callback_data="soc_hub", style=enums.ButtonStyle.PRIMARY)]
+            ]),
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        await callback_query.answer("❌ Declined.")
         return
 
     await callback_query.answer()
