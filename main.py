@@ -555,13 +555,17 @@ async def start(client, message):
     name = message.from_user.first_name
 
     caption = (
+        "```\n"
         "╔══════════════════════╗\n"
-        "       🎮 *MAIN MENU*\n"
-        "╚══════════════════════╝\n\n"
-        f"🙏 *Welcome, {cN(name)}!*\n\n"
-        "┌──── 💎  ʙᴀʟᴀɴᴄᴇ ────┐\n"
-        f"│  💰 {c} ᴄᴏɪɴs  │  🏆 {w} ᴡɪɴs\n"
-        "└────────────────────────┘\n\n"
+        "       🎮 MAIN MENU\n"
+        "╚══════════════════════╝\n"
+        "```\n"
+        f"🙏 *Welcome,* `{cN(name)}`*!*\n\n"
+        "```\n"
+        "┌──── 💎  BALANCE ────┐\n"
+        f"│  💰 {c} coins  │  🏆 {w} wins\n"
+        "└────────────────────────┘\n"
+        "```\n"
         "𝗖𝗵𝗼𝗼𝘀𝗲 𝘆𝗼𝘂𝗿 𝗺𝗼𝗱𝗲 ⬇️"
         + foot
     )
@@ -571,7 +575,8 @@ async def start(client, message):
             photo=START_IMAGE,
             caption=caption,
             reply_markup=build_main_menu_markup(),
-            parse_mode=enums.ParseMode.MARKDOWN
+            parse_mode=enums.ParseMode.MARKDOWN,
+            has_spoiler=True
         )
     except Exception:
         await message.reply_text(
@@ -792,12 +797,14 @@ async def ping(client, message):
     await msg.delete()
 
     caption = (
+        "```\n"
         "╔══════════════════════╗\n"
-        "       🏓 *PONG!*\n"
-        "╚══════════════════════╝\n\n"
-        f"⚡ Speed: `{elapsed}ms`\n"
-        f"🤖 Bot: *Online*\n"
-        f"🎮 Status: *Ready to play!*"
+        "       🏓 PONG!\n"
+        "╚══════════════════════╝\n"
+        "```\n"
+        f"⚡ *Speed:* `{elapsed}ms`\n"
+        f"🤖 *Bot:* `Online`\n"
+        f"🎮 *Status:* `Ready to play!`"
         + foot
     )
     try:
@@ -807,7 +814,8 @@ async def ping(client, message):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(ff("🎮 Play Now"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)]
             ]),
-            parse_mode=enums.ParseMode.MARKDOWN
+            parse_mode=enums.ParseMode.MARKDOWN,
+            has_spoiler=True
         )
     except Exception:
         await message.reply_text(caption, parse_mode=enums.ParseMode.MARKDOWN)
@@ -911,6 +919,73 @@ async def banned_list(client, message):
     await message.reply_text(f"🚫 *Banned Users:*\n{ids}", parse_mode=enums.ParseMode.MARKDOWN)
 
 
+@app.on_message(filters.command("broadcast") & filters.user(OWNER_ID))
+async def broadcast_cmd(client, message):
+    if len(message.command) < 2 and not message.reply_to_message:
+        await message.reply_text(
+            "╔══════════════════════╗\n"
+            "       📢 *BROADCAST*\n"
+            "╚══════════════════════╝\n\n"
+            "Usage:\n"
+            "`/broadcast <your message>`\n\n"
+            "Or reply to any message with `/broadcast`\n\n"
+            f"👥 *Registered users:* {len(user_names)}",
+            parse_mode=enums.ParseMode.MARKDOWN
+        )
+        return
+
+    if message.reply_to_message:
+        bcast_text = message.reply_to_message.text or message.reply_to_message.caption or ""
+    else:
+        bcast_text = message.text.split(None, 1)[1] if len(message.text.split(None, 1)) > 1 else ""
+
+    if not bcast_text:
+        await message.reply_text("❌ Nothing to broadcast.", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+
+    total = len(user_names)
+    if total == 0:
+        await message.reply_text("❌ No users to broadcast to yet.", parse_mode=enums.ParseMode.MARKDOWN)
+        return
+
+    status_msg = await message.reply_text(
+        f"📢 *Broadcasting to {total} users...*\n⏳ Please wait...",
+        parse_mode=enums.ParseMode.MARKDOWN
+    )
+
+    sent = 0
+    failed = 0
+    broadcast_text = (
+        "╔══════════════════════╗\n"
+        f"       📢 *BROADCAST*\n"
+        "╚══════════════════════╝\n\n"
+        + bcast_text
+        + foot
+    )
+
+    for uid in list(user_names.keys()):
+        try:
+            await client.send_message(
+                uid,
+                broadcast_text,
+                parse_mode=enums.ParseMode.MARKDOWN
+            )
+            sent += 1
+            await asyncio.sleep(0.05)
+        except Exception:
+            failed += 1
+
+    await status_msg.edit_text(
+        "╔══════════════════════╗\n"
+        "       📢 *BROADCAST DONE*\n"
+        "╚══════════════════════╝\n\n"
+        f"✅ *Sent:* `{sent}`\n"
+        f"❌ *Failed:* `{failed}`\n"
+        f"👥 *Total:* `{total}`",
+        parse_mode=enums.ParseMode.MARKDOWN
+    )
+
+
 @app.on_message(filters.command("ownerhelp") & filters.user(OWNER_ID))
 async def owner_help(client, message):
     await message.reply_text(
@@ -926,6 +1001,10 @@ async def owner_help(client, message):
         "│ `/ban <id>` — Ban user\n"
         "│ `/unban <id>` — Unban user\n"
         "│ `/bannedlist` — List banned users\n"
+        "└────────────────────────┘\n\n"
+        "┌──── 📢 ʙʀᴏᴀᴅᴄᴀsᴛ ────┐\n"
+        "│ `/broadcast <msg>` — Send to all users\n"
+        "│ Reply any msg + `/broadcast`\n"
         "└────────────────────────┘",
         parse_mode=enums.ParseMode.MARKDOWN
     )
