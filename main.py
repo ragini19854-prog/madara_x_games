@@ -507,6 +507,11 @@ def build_main_menu_markup():
             InlineKeyboardButton(ff("📊 Stats"), callback_data="ttt_stats", style=enums.ButtonStyle.PRIMARY),
         ],
         [InlineKeyboardButton(ff("🎁 Daily"), callback_data="ttt_daily", style=enums.ButtonStyle.SUCCESS)],
+        [
+            InlineKeyboardButton("му мαѕтєя", url="https://t.me/YOUR_fucker_dad", style=enums.ButtonStyle.DANGER),
+            InlineKeyboardButton("ѕυρρσят", url="https://t.me/+Li5WLVyQTwNkOTQ1", style=enums.ButtonStyle.DANGER),
+            InlineKeyboardButton("¢нαηηєℓ", url="https://t.me/+1NRRqUd1replNTM1", style=enums.ButtonStyle.DANGER),
+        ],
     ])
 
 
