@@ -297,7 +297,7 @@ async def render_board(client, gid):
                 message_id=g["group_mid"],
                 text=txt,
                 reply_markup=markup,
-                parse_mode="markdown"
+                parse_mode=enums.ParseMode.MARKDOWN
             )
         except Exception:
             pass
@@ -310,7 +310,7 @@ async def render_board(client, gid):
                         message_id=mid,
                         text=txt,
                         reply_markup=markup,
-                        parse_mode="markdown"
+                        parse_mode=enums.ParseMode.MARKDOWN
                     )
                 except Exception:
                     pass
@@ -376,8 +376,8 @@ async def advanceTournament(client, tid, fgid):
                 "tourney_id": tid,
             }
             lk = gLink(t["group_cid"], t["group_mid"])
-            await client.send_message(nm["p1"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(nm['p2']['name'])}\n🔗 [Play]({lk})", parse_mode="markdown")
-            await client.send_message(nm["p2"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(nm['p1']['name'])}\n🔗 [Play]({lk})", parse_mode="markdown")
+            await client.send_message(nm["p1"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(nm['p2']['name'])}\n🔗 [Play]({lk})", parse_mode=enums.ParseMode.MARKDOWN)
+            await client.send_message(nm["p2"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(nm['p1']['name'])}\n🔗 [Play]({lk})", parse_mode=enums.ParseMode.MARKDOWN)
             return
 
     rw = [m.get("winner") for m in t["rounds"][t["current_round"]] if m.get("winner") and m["winner"].get("id") != "split"]
@@ -398,13 +398,13 @@ async def advanceTournament(client, tid, fgid):
         rt = "╔══════════════════════╗\n       🏆 *TOURNAMENT OVER*\n╚══════════════════════╝\n\n"
         if ch:
             rt += f"🥇 {cN(ch['name'])} — +500\n"
-            await client.send_message(ch["id"], "🏆 *YOU WON!* 🥇 +500 coins!" + foot, parse_mode="markdown")
+            await client.send_message(ch["id"], "🏆 *YOU WON!* 🥇 +500 coins!" + foot, parse_mode=enums.ParseMode.MARKDOWN)
         if ru and ru.get("id") != "split":
             rt += f"🥈 {cN(ru['name'])} — +200\n"
-            await client.send_message(ru["id"], "🥈 *2nd Place!* +200 coins!" + foot, parse_mode="markdown")
+            await client.send_message(ru["id"], "🥈 *2nd Place!* +200 coins!" + foot, parse_mode=enums.ParseMode.MARKDOWN)
         if tp and tp.get("id") != "split":
             rt += f"🥉 {cN(tp['name'])} — +100\n"
-            await client.send_message(tp["id"], "🥉 *3rd Place!* +100 coins!" + foot, parse_mode="markdown")
+            await client.send_message(tp["id"], "🥉 *3rd Place!* +100 coins!" + foot, parse_mode=enums.ParseMode.MARKDOWN)
 
         rt += "\n🎉 GG!" + foot
         t["status"] = "finished"
@@ -414,7 +414,7 @@ async def advanceTournament(client, tid, fgid):
                 message_id=t["group_mid"],
                 text=rt,
                 reply_markup=InlineKeyboardMarkup([]),
-                parse_mode="markdown"
+                parse_mode=enums.ParseMode.MARKDOWN
             )
         except Exception:
             pass
@@ -454,8 +454,8 @@ async def advanceTournament(client, tid, fgid):
             "tourney_id": tid
         }
         lk = gLink(t["group_cid"], t["group_mid"])
-        await client.send_message(fnm["p1"]["id"], f"🎮 *NEXT ROUND!*\nVs {cN(fnm['p2']['name'])}\n🔗 [Play]({lk})", parse_mode="markdown")
-        await client.send_message(fnm["p2"]["id"], f"🎮 *NEXT ROUND!*\nVs {cN(fnm['p1']['name'])}\n🔗 [Play]({lk})", parse_mode="markdown")
+        await client.send_message(fnm["p1"]["id"], f"🎮 *NEXT ROUND!*\nVs {cN(fnm['p2']['name'])}\n🔗 [Play]({lk})", parse_mode=enums.ParseMode.MARKDOWN)
+        await client.send_message(fnm["p2"]["id"], f"🎮 *NEXT ROUND!*\nVs {cN(fnm['p1']['name'])}\n🔗 [Play]({lk})", parse_mode=enums.ParseMode.MARKDOWN)
 
 
 async def show_menu(client, callback_query):
@@ -487,7 +487,7 @@ async def show_menu(client, callback_query):
             ],
             [InlineKeyboardButton(ff("🎁 Daily"), callback_data="ttt_daily", style=enums.ButtonStyle.SUCCESS)],
         ]),
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
 
 
@@ -561,13 +561,13 @@ async def start(client, message):
             photo=START_IMAGE,
             caption=caption,
             reply_markup=build_main_menu_markup(),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
     except Exception:
         await message.reply_text(
             caption,
             reply_markup=build_main_menu_markup(),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
 
 
@@ -580,16 +580,16 @@ async def challenge(client, message):
         return
 
     if message.chat.type == "private":
-        await message.reply_text("❌ Use in a *Group*!", parse_mode="markdown")
+        await message.reply_text("❌ Use in a *Group*!", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
     if len(message.command) < 2:
-        await message.reply_text("Usage:\n`/challenge @user`\n`/challenge @user 100`", parse_mode="markdown")
+        await message.reply_text("Usage:\n`/challenge @user`\n`/challenge @user 100`", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
     target = message.command[1]
     if not target.startswith("@"):
-        await message.reply_text("❌ `/challenge @username`", parse_mode="markdown")
+        await message.reply_text("❌ `/challenge @username`", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
     target_user = target.replace("@", "")
@@ -606,7 +606,7 @@ async def challenge(client, message):
 
     coins = user_coins.get(message.from_user.id, 0)
     if bet > 0 and coins < bet:
-        await message.reply_text(f"❌ Need *{bet}*, have *{coins}*", parse_mode="markdown")
+        await message.reply_text(f"❌ Need *{bet}*, have *{coins}*", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
     gid = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
@@ -638,7 +638,7 @@ async def challenge(client, message):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(ff("🤝 Accept Challenge"), callback_data=f"ttt_acc {gid}", style=enums.ButtonStyle.SUCCESS)]
         ]),
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
     games[gid]["group_mid"] = sent.id
 
@@ -659,7 +659,7 @@ async def daily(client, message):
         r = 86400 - (now - lc)
         h = r // 3600
         m = (r % 3600) // 60
-        await message.reply_text(f"⏰ Come back in *{h}h {m}m*", parse_mode="markdown")
+        await message.reply_text(f"⏰ Come back in *{h}h {m}m*", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
     boost = booster_data.get(user_id)
@@ -671,7 +671,7 @@ async def daily(client, message):
     if reward > 100:
         msg += "\n🚀 *Booster 2x active!*"
     msg += f"\n💰 Balance: {user_coins[user_id]}"
-    await message.reply_text(msg, parse_mode="markdown")
+    await message.reply_text(msg, parse_mode=enums.ParseMode.MARKDOWN)
 
 
 # ================= /HELP COMMAND =================
@@ -714,7 +714,7 @@ async def help_cmd(client, message):
         f"╔══════════════════════╗\n"
         f"     👨‍💻 {CHANNEL_NAME}\n"
         f"╚══════════════════════╝",
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
 
 
@@ -727,7 +727,7 @@ async def tournament_cmd(client, message):
         return
 
     if message.chat.type == "private":
-        await message.reply_text("❌ Use in a *Group*!", parse_mode="markdown")
+        await message.reply_text("❌ Use in a *Group*!", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
     tid = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
@@ -761,7 +761,7 @@ async def tournament_cmd(client, message):
             [InlineKeyboardButton(ff("🎮 Join Tournament"), callback_data="trn_join " + tid, style=enums.ButtonStyle.PRIMARY)],
             [InlineKeyboardButton(ff("🚀 Begin"), callback_data="trn_start " + tid, style=enums.ButtonStyle.SUCCESS)],
         ]),
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
     if res:
         t["group_mid"] = res.id
@@ -797,10 +797,10 @@ async def ping(client, message):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(ff("🎮 Play Now"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)]
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
     except Exception:
-        await message.reply_text(caption, parse_mode="markdown")
+        await message.reply_text(caption, parse_mode=enums.ParseMode.MARKDOWN)
 
 
 # ================= OWNER COMMANDS =================
@@ -808,7 +808,7 @@ async def ping(client, message):
 @app.on_message(filters.command("addcoins") & filters.user(OWNER_ID))
 async def add_coins(client, message):
     if len(message.command) < 3:
-        await message.reply_text("Usage: `/addcoins <user_id> <amount>`", parse_mode="markdown")
+        await message.reply_text("Usage: `/addcoins <user_id> <amount>`", parse_mode=enums.ParseMode.MARKDOWN)
         return
     try:
         target_id = int(message.command[1])
@@ -820,14 +820,14 @@ async def add_coins(client, message):
     await message.reply_text(
         f"✅ *Added {amount} coins* to user `{target_id}`\n"
         f"💰 New balance: *{user_coins[target_id]}*",
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
 
 
 @app.on_message(filters.command("removecoins") & filters.user(OWNER_ID))
 async def remove_coins(client, message):
     if len(message.command) < 3:
-        await message.reply_text("Usage: `/removecoins <user_id> <amount>`", parse_mode="markdown")
+        await message.reply_text("Usage: `/removecoins <user_id> <amount>`", parse_mode=enums.ParseMode.MARKDOWN)
         return
     try:
         target_id = int(message.command[1])
@@ -839,14 +839,14 @@ async def remove_coins(client, message):
     await message.reply_text(
         f"✅ *Removed {amount} coins* from user `{target_id}`\n"
         f"💰 New balance: *{user_coins[target_id]}*",
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
 
 
 @app.on_message(filters.command("setcoins") & filters.user(OWNER_ID))
 async def set_coins(client, message):
     if len(message.command) < 3:
-        await message.reply_text("Usage: `/setcoins <user_id> <amount>`", parse_mode="markdown")
+        await message.reply_text("Usage: `/setcoins <user_id> <amount>`", parse_mode=enums.ParseMode.MARKDOWN)
         return
     try:
         target_id = int(message.command[1])
@@ -857,14 +857,14 @@ async def set_coins(client, message):
     user_coins[target_id] = amount
     await message.reply_text(
         f"✅ *Set coins* for user `{target_id}` to *{amount}*",
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
 
 
 @app.on_message(filters.command("ban") & filters.user(OWNER_ID))
 async def ban_user(client, message):
     if len(message.command) < 2:
-        await message.reply_text("Usage: `/ban <user_id>`", parse_mode="markdown")
+        await message.reply_text("Usage: `/ban <user_id>`", parse_mode=enums.ParseMode.MARKDOWN)
         return
     try:
         target_id = int(message.command[1])
@@ -875,13 +875,13 @@ async def ban_user(client, message):
         await message.reply_text("❌ Cannot ban the owner!")
         return
     banned_users.add(target_id)
-    await message.reply_text(f"🚫 User `{target_id}` has been *banned*.", parse_mode="markdown")
+    await message.reply_text(f"🚫 User `{target_id}` has been *banned*.", parse_mode=enums.ParseMode.MARKDOWN)
 
 
 @app.on_message(filters.command("unban") & filters.user(OWNER_ID))
 async def unban_user(client, message):
     if len(message.command) < 2:
-        await message.reply_text("Usage: `/unban <user_id>`", parse_mode="markdown")
+        await message.reply_text("Usage: `/unban <user_id>`", parse_mode=enums.ParseMode.MARKDOWN)
         return
     try:
         target_id = int(message.command[1])
@@ -889,16 +889,16 @@ async def unban_user(client, message):
         await message.reply_text("❌ Invalid user ID.")
         return
     banned_users.discard(target_id)
-    await message.reply_text(f"✅ User `{target_id}` has been *unbanned*.", parse_mode="markdown")
+    await message.reply_text(f"✅ User `{target_id}` has been *unbanned*.", parse_mode=enums.ParseMode.MARKDOWN)
 
 
 @app.on_message(filters.command("bannedlist") & filters.user(OWNER_ID))
 async def banned_list(client, message):
     if not banned_users:
-        await message.reply_text("✅ No banned users.", parse_mode="markdown")
+        await message.reply_text("✅ No banned users.", parse_mode=enums.ParseMode.MARKDOWN)
         return
     ids = "\n".join(f"• `{uid}`" for uid in banned_users)
-    await message.reply_text(f"🚫 *Banned Users:*\n{ids}", parse_mode="markdown")
+    await message.reply_text(f"🚫 *Banned Users:*\n{ids}", parse_mode=enums.ParseMode.MARKDOWN)
 
 
 @app.on_message(filters.command("ownerhelp") & filters.user(OWNER_ID))
@@ -917,7 +917,7 @@ async def owner_help(client, message):
         "│ `/unban <id>` — Unban user\n"
         "│ `/bannedlist` — List banned users\n"
         "└────────────────────────┘",
-        parse_mode="markdown"
+        parse_mode=enums.ParseMode.MARKDOWN
     )
 
 
@@ -956,7 +956,7 @@ async def callback_handler(client, callback_query):
                 ],
                 [InlineKeyboardButton(ff("🔙 Menu"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -980,7 +980,7 @@ async def callback_handler(client, callback_query):
             "wager": 0,
         }
         if is_ai:
-            res = await callback_query.message.edit_text("🎮 *Game starting...*", parse_mode="markdown")
+            res = await callback_query.message.edit_text("🎮 *Game starting...*", parse_mode=enums.ParseMode.MARKDOWN)
             games[ng]["p1_msg"] = res.id
             await render_board(client, ng)
         else:
@@ -996,7 +996,7 @@ async def callback_handler(client, callback_query):
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton(ff("❌ Cancel"), callback_data=f"ttt_cancel {ng}", style=enums.ButtonStyle.DANGER)],
                 ]),
-                parse_mode="markdown"
+                parse_mode=enums.ParseMode.MARKDOWN
             )
             games[ng]["p1_msg"] = res.id
         return
@@ -1025,9 +1025,9 @@ async def callback_handler(client, callback_query):
         g["status"] = "playing"
         g["turn"] = g["p1"]
 
-        res1 = await client.send_message(g["p1"], "🎮 *Game started!*", parse_mode="markdown")
+        res1 = await client.send_message(g["p1"], "🎮 *Game started!*", parse_mode=enums.ParseMode.MARKDOWN)
         g["p1_msg"] = res1.id
-        res2 = await callback_query.message.reply_text("🎮 *Game started!*", parse_mode="markdown")
+        res2 = await callback_query.message.reply_text("🎮 *Game started!*", parse_mode=enums.ParseMode.MARKDOWN)
         g["p2_msg"] = res2.id
         games[gid] = g
         await render_board(client, gid)
@@ -1086,7 +1086,7 @@ async def callback_handler(client, callback_query):
                             [InlineKeyboardButton(ff("✅ Ready!"), callback_data=f"ttt_qready {gid}", style=enums.ButtonStyle.SUCCESS)],
                             [InlineKeyboardButton(ff("❌ Decline"), callback_data=f"ttt_qdecline {gid}", style=enums.ButtonStyle.DANGER)],
                         ]),
-                        parse_mode="markdown"
+                        parse_mode=enums.ParseMode.MARKDOWN
                     )
                     games[gid]["p1_confirm_msg"] = opponent["msg_id"]
                 except Exception:
@@ -1099,7 +1099,7 @@ async def callback_handler(client, callback_query):
                     [InlineKeyboardButton(ff("✅ Ready!"), callback_data=f"ttt_qready {gid}", style=enums.ButtonStyle.SUCCESS)],
                     [InlineKeyboardButton(ff("❌ Decline"), callback_data=f"ttt_qdecline {gid}", style=enums.ButtonStyle.DANGER)],
                 ]),
-                parse_mode="markdown"
+                parse_mode=enums.ParseMode.MARKDOWN
             )
             games[gid]["p2_confirm_msg"] = callback_query.message.id
             await callback_query.answer("🎯 Match Found!")
@@ -1122,7 +1122,7 @@ async def callback_handler(client, callback_query):
                     [InlineKeyboardButton(ff("🔄 Refresh"), callback_data="ttt_qrefresh", style=enums.ButtonStyle.PRIMARY)],
                     [InlineKeyboardButton(ff("❌ Cancel Search"), callback_data="ttt_qcancel", style=enums.ButtonStyle.DANGER)],
                 ]),
-                parse_mode="markdown"
+                parse_mode=enums.ParseMode.MARKDOWN
             )
             await callback_query.answer("🔍 Searching...")
         return
@@ -1144,10 +1144,10 @@ async def callback_handler(client, callback_query):
 
         if g["p1_ready"] and g["p2_ready"]:
             g["status"] = "playing"
-            res1 = await client.send_message(g["p1"], "🎮 *Game starting...*", parse_mode="markdown")
+            res1 = await client.send_message(g["p1"], "🎮 *Game starting...*", parse_mode=enums.ParseMode.MARKDOWN)
             if res1:
                 g["p1_msg"] = res1.id
-            res2 = await client.send_message(g["p2"], "🎮 *Game starting...*", parse_mode="markdown")
+            res2 = await client.send_message(g["p2"], "🎮 *Game starting...*", parse_mode=enums.ParseMode.MARKDOWN)
             if res2:
                 g["p2_msg"] = res2.id
             games[gid] = g
@@ -1158,7 +1158,7 @@ async def callback_handler(client, callback_query):
                         await client.edit_message_text(
                             chat_id=pid, message_id=mid,
                             text="╔══════════════════════╗\n       ✅ *GAME ON!*\n╚══════════════════════╝\n\n🎮 Both players ready!\n⬇️ Board is below." + foot,
-                            parse_mode="markdown"
+                            parse_mode=enums.ParseMode.MARKDOWN
                         )
                     except Exception:
                         pass
@@ -1167,7 +1167,7 @@ async def callback_handler(client, callback_query):
             games[gid] = g
             await callback_query.message.edit_text(
                 "╔══════════════════════╗\n       🎯 *MATCH FOUND!*\n╚══════════════════════╝\n\n✅ *You are READY!*\n\n⏳ Waiting for opponent to confirm..." + foot,
-                parse_mode="markdown"
+                parse_mode=enums.ParseMode.MARKDOWN
             )
             await callback_query.answer("✅ Ready! Waiting for opponent...")
         return
@@ -1194,7 +1194,7 @@ async def callback_handler(client, callback_query):
                         [InlineKeyboardButton(ff("🎯 Search Again"), callback_data="ttt_quickmatch", style=enums.ButtonStyle.PRIMARY)],
                         [InlineKeyboardButton(ff("🔙 Menu"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
                     ]),
-                    parse_mode="markdown"
+                    parse_mode=enums.ParseMode.MARKDOWN
                 )
             except Exception:
                 pass
@@ -1218,7 +1218,7 @@ async def callback_handler(client, callback_query):
                         [InlineKeyboardButton(ff("🎯 Try Again"), callback_data="ttt_quickmatch", style=enums.ButtonStyle.PRIMARY)],
                         [InlineKeyboardButton(ff("🔙 Menu"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
                     ]),
-                    parse_mode="markdown"
+                    parse_mode=enums.ParseMode.MARKDOWN
                 )
             except Exception:
                 pass
@@ -1279,7 +1279,7 @@ async def callback_handler(client, callback_query):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(ff("🔙 Back"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)]
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1297,7 +1297,7 @@ async def callback_handler(client, callback_query):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton(ff("🔙 Back"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)]
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1319,7 +1319,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("🚀 Booster ₡500"), callback_data="ttt_booster", style=enums.ButtonStyle.SUCCESS), InlineKeyboardButton(ff("🛡 Shield ₡300"), callback_data="ttt_shield", style=enums.ButtonStyle.SUCCESS)],
                 [InlineKeyboardButton(ff("🔙 Menu"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1333,7 +1333,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("Page 2 →"), callback_data="ttt_skins2", style=enums.ButtonStyle.PRIMARY), InlineKeyboardButton(ff("❌ Default (Free)"), callback_data="ttt_buy default", style=enums.ButtonStyle.DANGER)],
                 [InlineKeyboardButton(ff("🔙 Shop"), callback_data="ttt_shop", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1346,7 +1346,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("👾 Alien"), callback_data="ttt_buy alien", style=enums.ButtonStyle.PRIMARY), InlineKeyboardButton(ff("🍔 Food"), callback_data="ttt_buy food", style=enums.ButtonStyle.SUCCESS)],
                 [InlineKeyboardButton(ff("← Page 1"), callback_data="ttt_skins", style=enums.ButtonStyle.PRIMARY), InlineKeyboardButton(ff("🔙 Shop"), callback_data="ttt_shop", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1389,7 +1389,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("🔱 God of War ₡400"), callback_data="ttt_tit godofwar", style=enums.ButtonStyle.DANGER), InlineKeyboardButton(ff("❌ Remove"), callback_data="ttt_tit none", style=enums.ButtonStyle.DANGER)],
                 [InlineKeyboardButton(ff("🔙 Shop"), callback_data="ttt_shop", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1427,7 +1427,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("💠 Diamond ₡200"), callback_data="ttt_brd diamond", style=enums.ButtonStyle.SUCCESS), InlineKeyboardButton(ff("🟢 Neon ₡200"), callback_data="ttt_brd neon", style=enums.ButtonStyle.SUCCESS)],
                 [InlineKeyboardButton(ff("· Classic (Free)"), callback_data="ttt_brd default", style=enums.ButtonStyle.PRIMARY), InlineKeyboardButton(ff("🔙 Shop"), callback_data="ttt_shop", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="Markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1472,7 +1472,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("🎰 Try Again ₡150"), callback_data="ttt_lucky", style=enums.ButtonStyle.SUCCESS)],
                 [InlineKeyboardButton(ff("🔙 Shop"), callback_data="ttt_shop", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1516,7 +1516,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff("250 Coins"), callback_data="ttt_wager 250", style=enums.ButtonStyle.PRIMARY), InlineKeyboardButton(ff("500 Coins"), callback_data="ttt_wager 500", style=enums.ButtonStyle.DANGER)],
                 [InlineKeyboardButton(ff("🔙 Back"), callback_data="ttt_restart", style=enums.ButtonStyle.PRIMARY)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         return
 
@@ -1540,7 +1540,7 @@ async def callback_handler(client, callback_query):
             "type": "ai_hard",
             "wager": a,
         }
-        res = await callback_query.message.edit_text("🎮 *Wager game starting...*", parse_mode="markdown")
+        res = await callback_query.message.edit_text("🎮 *Wager game starting...*", parse_mode=enums.ParseMode.MARKDOWN)
         games[ng]["p1_msg"] = res.id
         await render_board(client, ng)
         return
@@ -1618,7 +1618,7 @@ async def callback_handler(client, callback_query):
                 [InlineKeyboardButton(ff(f"🎮 Join ({len(t['players'])}/{t['max']})"), callback_data=f"trn_join {tid}", style=enums.ButtonStyle.PRIMARY)],
                 [InlineKeyboardButton(ff("🚀 Begin"), callback_data=f"trn_start {tid}", style=enums.ButtonStyle.SUCCESS)],
             ]),
-            parse_mode="markdown"
+            parse_mode=enums.ParseMode.MARKDOWN
         )
         await callback_query.answer("Joined!")
         return
@@ -1655,7 +1655,7 @@ async def callback_handler(client, callback_query):
                 await client.send_message(
                     p["id"],
                     "⚔️ *TOURNAMENT STARTED!*\n" + f"🏆 {len(t['players'])} players!\n" + "🥇500 🥈200 🥉100\n\nHead to the group!" + foot,
-                    parse_mode="markdown"
+                    parse_mode=enums.ParseMode.MARKDOWN
                 )
             except Exception:
                 pass
@@ -1679,8 +1679,8 @@ async def callback_handler(client, callback_query):
             }
             lk = gLink(t["group_cid"], t["group_mid"])
             try:
-                await client.send_message(fm["p1"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(fm['p2']['name'])}\n🔗 [Play]({lk})", parse_mode="markdown")
-                await client.send_message(fm["p2"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(fm['p1']['name'])}\n🔗 [Play]({lk})", parse_mode="markdown")
+                await client.send_message(fm["p1"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(fm['p2']['name'])}\n🔗 [Play]({lk})", parse_mode=enums.ParseMode.MARKDOWN)
+                await client.send_message(fm["p2"]["id"], f"🎮 *YOUR MATCH!*\nVs {cN(fm['p1']['name'])}\n🔗 [Play]({lk})", parse_mode=enums.ParseMode.MARKDOWN)
             except Exception:
                 pass
         return
